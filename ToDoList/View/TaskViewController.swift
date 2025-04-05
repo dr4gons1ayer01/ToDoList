@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class FirstViewController: UIViewController {
+final class TaskViewController: UIViewController {
 
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     let networkManager: NetworkManager = NetworkManager(with: .default)
@@ -17,7 +17,7 @@ final class FirstViewController: UIViewController {
         table.translatesAutoresizingMaskIntoConstraints = false
         table.delegate = self
         table.dataSource = self
-        table.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        table.register(TaskTableViewCell.self, forCellReuseIdentifier: TaskTableViewCell.reuseIdentifier)
         return table
     }()
     
@@ -77,7 +77,7 @@ final class FirstViewController: UIViewController {
         }
         navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .add, primaryAction: addAction)
     }
-    
+
     //CoreData
     func getAllItems() {
         do {
@@ -124,25 +124,23 @@ final class FirstViewController: UIViewController {
     }
 }
 
-extension FirstViewController: UITableViewDelegate, UITableViewDataSource {
+extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return models.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let model = models[indexPath.row]
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: TaskTableViewCell.reuseIdentifier, for: indexPath) as? TaskTableViewCell else {
+            return UITableViewCell()
+        }
         
-        var listConiguration = cell.defaultContentConfiguration()
-        listConiguration.text = model.name
-        listConiguration.secondaryText = model.isDone ? "✅ Выполнено" : "❌ Не выполнено"
-//        listConiguration.secondaryText = DateFormatter.localizedString(from: model.createdAt ?? Date(), dateStyle: .medium, timeStyle: .short)
-        listConiguration.secondaryTextProperties.color = .systemIndigo
-        cell.contentConfiguration = listConiguration
+        let model = models[indexPath.row]
+        cell.configureCell(with: model)
         
         return cell
     }
     
+    //TODO: переделать
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let item = models[indexPath.row]

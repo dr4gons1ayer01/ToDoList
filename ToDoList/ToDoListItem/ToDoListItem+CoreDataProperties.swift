@@ -20,6 +20,7 @@ extension ToDoListItem {
     @NSManaged public var createdAt: Date?
     @NSManaged public var isDone: Bool
     @NSManaged public var id: Int64
+    @NSManaged public var taskDescription: String?
 
 }
 
