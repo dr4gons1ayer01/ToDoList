@@ -10,6 +10,7 @@ import UIKit
 final class FirstViewController: UIViewController {
 
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    let networkManager: NetworkManager = NetworkManager(with: .default)
     
     lazy var tableView: UITableView = {
         let table = UITableView()
@@ -30,7 +31,35 @@ final class FirstViewController: UIViewController {
         
         getAllItems()
         addNavigationItems()
+        fetchAndSaveFromAPI()
     }
+    
+    func fetchAndSaveFromAPI() {
+        networkManager.obtainTodos { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let todos):
+                    print("Получено задач: \(todos.count)")
+                    todos.forEach { dto in
+                        guard let self else { return }
+                        // защита от дублей
+                        if !self.models.contains(where: { $0.id == dto.id }) {
+                            _ = ToDoListItem.from(dto: dto, context: self.context)
+                        }
+                    }
+                    do {
+                        try self?.context.save()
+                        self?.getAllItems()
+                    } catch {
+                        print("Ошибка при сохранении: \(error)")
+                    }
+                case .failure(let error):
+                    print("Ошибка загрузки: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
     
     func addNavigationItems() {
         let addAction = UIAction { _ in
@@ -106,7 +135,8 @@ extension FirstViewController: UITableViewDelegate, UITableViewDataSource {
         
         var listConiguration = cell.defaultContentConfiguration()
         listConiguration.text = model.name
-        listConiguration.secondaryText = DateFormatter.localizedString(from: model.createdAt ?? Date(), dateStyle: .medium, timeStyle: .short)
+        listConiguration.secondaryText = model.isDone ? "✅ Выполнено" : "❌ Не выполнено"
+//        listConiguration.secondaryText = DateFormatter.localizedString(from: model.createdAt ?? Date(), dateStyle: .medium, timeStyle: .short)
         listConiguration.secondaryTextProperties.color = .systemIndigo
         cell.contentConfiguration = listConiguration
         
@@ -125,9 +155,8 @@ extension FirstViewController: UITableViewDelegate, UITableViewDataSource {
             let alert = UIAlertController(title: "Редактирование",
                                           message: nil,
                                           preferredStyle: .alert)
-            alert.addTextField { textField in
-                    textField.text = item.name
-                }
+            alert.addTextField()
+            alert.textFields?.first?.text = item.name
             alert.addAction(UIAlertAction(title: "Отмена", style: .destructive))
             alert.addAction(UIAlertAction(title: "Сохранить", style: .cancel, handler: { [weak self] _ in
                 guard let field = alert.textFields?.first, let newName = field.text, !newName.isEmpty else {
