@@ -9,57 +9,45 @@ import UIKit
 
 final class TaskViewController: UIViewController {
 
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-    let networkManager: NetworkManager = NetworkManager(with: .default)
+    private let contentView: TaskView = .init()
+    private let viewModel: TaskViewModel
     
-    lazy var tableView: UITableView = {
-        let table = UITableView()
-        table.translatesAutoresizingMaskIntoConstraints = false
-        table.delegate = self
-        table.dataSource = self
-        table.register(TaskTableViewCell.self, forCellReuseIdentifier: TaskTableViewCell.reuseIdentifier)
-        return table
-    }()
+    init(viewModel: TaskViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
     
-    private(set) var models = [ToDoListItem]()
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func loadView() {
+        view = contentView
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Задачи"
-        view.addSubview(tableView)
-        tableView.frame = view.bounds
         
-        getAllItems()
+        configureTableView()
+        configureBindings()
+        
         addNavigationItems()
-        fetchAndSaveFromAPI()
+        viewModel.fetchAndSaveFromAPI()
     }
     
-    func fetchAndSaveFromAPI() {
-        networkManager.obtainTodos { [weak self] result in
+    private func configureTableView() {
+        contentView.tableView.delegate = self
+        contentView.tableView.dataSource = self
+    }
+    
+    private func configureBindings() {
+        viewModel.onUpdate = { [weak self] in
             DispatchQueue.main.async {
-                switch result {
-                case .success(let todos):
-                    print("Получено задач: \(todos.count)")
-                    todos.forEach { dto in
-                        guard let self else { return }
-                        // защита от дублей
-                        if !self.models.contains(where: { $0.id == dto.id }) {
-                            _ = ToDoListItem.from(dto: dto, context: self.context)
-                        }
-                    }
-                    do {
-                        try self?.context.save()
-                        self?.getAllItems()
-                    } catch {
-                        print("Ошибка при сохранении: \(error)")
-                    }
-                case .failure(let error):
-                    print("Ошибка загрузки: \(error.localizedDescription)")
-                }
+                self?.contentView.tableView.reloadData()
             }
         }
     }
-
     
     func addNavigationItems() {
         let addAction = UIAction { _ in
@@ -71,62 +59,18 @@ final class TaskViewController: UIViewController {
                 guard let field = alert.textFields?.first, let text = field.text, !text.isEmpty else {
                     return
                 }
-                self?.createItem(name: text)
+                self?.viewModel.createItem(name: text)
             }))
             self.present(alert, animated: true)
         }
         navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .add, primaryAction: addAction)
     }
-
-    //CoreData
-    func getAllItems() {
-        do {
-            models = try context.fetch(ToDoListItem.fetchRequest())
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
-            }
-        } catch {
-            //error
-        }
-    }
     
-    func createItem(name: String) {
-        let newItem = ToDoListItem(context: context)
-        newItem.name = name
-        newItem.createdAt = Date()
-        
-        do {
-            try context.save()
-            getAllItems()
-        } catch {
-            //error
-        }
-    }
-    
-    func deleteItem(item: ToDoListItem) {
-        context.delete(item)
-        do {
-            try context.save()
-            getAllItems()
-        } catch {
-            //error
-        }
-    }
-    
-    func updateItem(item: ToDoListItem, newName: String) {
-        item.name = newName
-        do {
-            try context.save()
-            getAllItems()
-        } catch {
-            //error
-        }
-    }
 }
 
 extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return models.count
+        return viewModel.items.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -134,7 +78,7 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
             return UITableViewCell()
         }
         
-        let model = models[indexPath.row]
+        let model = viewModel.items[indexPath.row]
         cell.configureCell(with: model)
         
         return cell
@@ -143,7 +87,7 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
     //TODO: переделать
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let item = models[indexPath.row]
+        let item = viewModel.items[indexPath.row]
         
         let sheet = UIAlertController(title: "Редактировать или Удалить",
                                       message: nil,
@@ -160,13 +104,13 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
                 guard let field = alert.textFields?.first, let newName = field.text, !newName.isEmpty else {
                     return
                 }
-                self?.updateItem(item: item, newName: newName)
+                self?.viewModel.updateItem(item: item, newName: newName)
             }))
             
             self?.present(alert, animated: true)
         }))
         sheet.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { [weak self] _ in
-            self?.deleteItem(item: item)
+            self?.viewModel.deleteItem(item: item)
         }))
         present(sheet, animated: true)
     }
