@@ -16,6 +16,7 @@ final class TaskView: UIView {
     lazy var tableView: UITableView = {
         let table = UITableView()
         table.translatesAutoresizingMaskIntoConstraints = false
+        table.contentInsetAdjustmentBehavior = .automatic
         table.register(TaskTableViewCell.self, forCellReuseIdentifier: TaskTableViewCell.reuseIdentifier)
         return table
     }()

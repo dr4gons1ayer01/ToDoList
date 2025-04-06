@@ -27,8 +27,6 @@ final class TaskViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Задачи"
-        
         configureTableView()
         configureBindings()
         
@@ -37,6 +35,10 @@ final class TaskViewController: UIViewController {
     }
     
     private func configureTableView() {
+        title = "Задачи"
+        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationItem.largeTitleDisplayMode = .always
+        
         contentView.tableView.delegate = self
         contentView.tableView.dataSource = self
     }
@@ -84,34 +86,43 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
         return cell
     }
     
-    //TODO: переделать
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let item = viewModel.items[indexPath.row]
-        
-        let sheet = UIAlertController(title: "Редактировать или Удалить",
-                                      message: nil,
-                                      preferredStyle: .actionSheet)
-        sheet.addAction(UIAlertAction(title: "Отмена", style: .cancel))
-        sheet.addAction(UIAlertAction(title: "Редактировать", style: .default, handler: { [weak self] _ in
-            let alert = UIAlertController(title: "Редактирование",
-                                          message: nil,
-                                          preferredStyle: .alert)
-            alert.addTextField()
-            alert.textFields?.first?.text = item.name
-            alert.addAction(UIAlertAction(title: "Отмена", style: .destructive))
-            alert.addAction(UIAlertAction(title: "Сохранить", style: .cancel, handler: { [weak self] _ in
-                guard let field = alert.textFields?.first, let newName = field.text, !newName.isEmpty else {
-                    return
-                }
-                self?.viewModel.updateItem(item: item, newName: newName)
-            }))
-            
-            self?.present(alert, animated: true)
-        }))
-        sheet.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { [weak self] _ in
-            self?.viewModel.deleteItem(item: item)
-        }))
-        present(sheet, animated: true)
+        let detailVM = DetailViewModel(item: item)
+        let detailVC = DetailViewController(viewModel: detailVM)
+        navigationController?.pushViewController(detailVC, animated: true)
     }
+
+    
+    //TODO: переделать
+//    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+//        tableView.deselectRow(at: indexPath, animated: true)
+//        let item = viewModel.items[indexPath.row]
+//        
+//        let sheet = UIAlertController(title: "Редактировать или Удалить",
+//                                      message: nil,
+//                                      preferredStyle: .actionSheet)
+//        sheet.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+//        sheet.addAction(UIAlertAction(title: "Редактировать", style: .default, handler: { [weak self] _ in
+//            let alert = UIAlertController(title: "Редактирование",
+//                                          message: nil,
+//                                          preferredStyle: .alert)
+//            alert.addTextField()
+//            alert.textFields?.first?.text = item.name
+//            alert.addAction(UIAlertAction(title: "Отмена", style: .destructive))
+//            alert.addAction(UIAlertAction(title: "Сохранить", style: .cancel, handler: { [weak self] _ in
+//                guard let field = alert.textFields?.first, let newName = field.text, !newName.isEmpty else {
+//                    return
+//                }
+//                self?.viewModel.updateItem(item: item, newName: newName)
+//            }))
+//            
+//            self?.present(alert, animated: true)
+//        }))
+//        sheet.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { [weak self] _ in
+//            self?.viewModel.deleteItem(item: item)
+//        }))
+//        present(sheet, animated: true)
+//    }
 }

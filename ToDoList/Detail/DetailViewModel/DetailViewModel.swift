@@ -7,6 +7,10 @@
 
 import Foundation
 
-class DetailViewModel {
+final class DetailViewModel {
+    let item: ToDoListItem
     
+    init(item: ToDoListItem) {
+        self.item = item
+    }
 }
