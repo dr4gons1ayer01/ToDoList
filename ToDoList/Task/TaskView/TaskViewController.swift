@@ -9,6 +9,7 @@ import UIKit
 
 final class TaskViewController: UIViewController {
 
+    private let searchController = UISearchController()
     private let contentView: TaskView = .init()
     private let viewModel: TaskViewModel
     
@@ -28,6 +29,7 @@ final class TaskViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureTableView()
+        configureSearch()
         configureBindings()
         
         addNavigationItems()
@@ -41,6 +43,16 @@ final class TaskViewController: UIViewController {
         
         contentView.tableView.delegate = self
         contentView.tableView.dataSource = self
+    }
+    
+    private func configureSearch() {
+        navigationItem.searchController = searchController
+        navigationItem.hidesSearchBarWhenScrolling = false
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search"
+        searchController.searchBar.tintColor = .systemYellow
+        searchController.searchResultsUpdater = self
+        definesPresentationContext = true
     }
     
     private func configureBindings() {
@@ -70,9 +82,18 @@ final class TaskViewController: UIViewController {
     
 }
 
+//MARK: UISearchResultsUpdating
+extension TaskViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        guard let searchText = searchController.searchBar.text else { return }
+        viewModel.filterItems(with: searchText)
+    }
+}
+
+//MARK: UITableViewDelegate, UITableViewDataSource
 extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.items.count
+        return viewModel.filteredItems.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -80,7 +101,7 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
             return UITableViewCell()
         }
         
-        let model = viewModel.items[indexPath.row]
+        let model = viewModel.filteredItems[indexPath.row]
         cell.configureCell(with: model)
         
         return cell
@@ -88,13 +109,12 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let item = viewModel.items[indexPath.row]
+        let item = viewModel.filteredItems[indexPath.row]
         let detailVM = DetailViewModel(item: item)
         let detailVC = DetailViewController(viewModel: detailVM)
         navigationController?.pushViewController(detailVC, animated: true)
     }
 
-    
     //TODO: переделать
 //    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 //        tableView.deselectRow(at: indexPath, animated: true)

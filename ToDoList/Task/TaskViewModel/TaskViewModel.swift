@@ -10,6 +10,7 @@ import UIKit
 final class TaskViewModel {
     
     private(set) var items = [ToDoListItem]()
+    private(set) var filteredItems = [ToDoListItem]()
     var onUpdate: (() -> Void)?
     
     let dataManager = DataManager.shared
@@ -46,9 +47,21 @@ final class TaskViewModel {
         }
     }
     
+    func filterItems(with text: String) {
+        if text.isEmpty {
+            filteredItems = items
+        } else {
+            filteredItems = items.filter {
+                $0.name?.lowercased().contains(text.lowercased()) == true
+            }
+        }
+        onUpdate?()
+    }
+    
     //CoreData
     func getAllItems() {
         items = dataManager.getAllItems()
+        filteredItems = items
         onUpdate?()
     }
     
