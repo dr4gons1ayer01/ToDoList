@@ -102,6 +102,15 @@ extension TaskViewController: UISearchResultsUpdating {
     }
 }
 
+//MARK: TaskTableViewCellDelegate
+extension TaskViewController: TaskTableViewCellDelegate {
+    func didToggleCompletion(for cell: TaskTableViewCell) {
+        guard let indexPath = contentView.tableView.indexPath(for: cell) else { return }
+        let item = viewModel.filteredItems[indexPath.row]
+        viewModel.toggleCompletion(for: item)
+    }
+}
+
 //MARK: UITableViewDelegate, UITableViewDataSource
 extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -115,6 +124,7 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
         
         let model = viewModel.filteredItems[indexPath.row]
         cell.configureCell(with: model)
+        cell.delegate = self
         
         return cell
     }

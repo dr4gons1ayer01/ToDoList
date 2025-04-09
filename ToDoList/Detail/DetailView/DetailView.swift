@@ -50,7 +50,16 @@ final class DetailView: UIView {
     }
     
     func configure(with item: ToDoListItem) {
-        titleLabel.text = item.name
+        let title = item.name ?? ""
+        let attributedString = NSMutableAttributedString(string: title)
+        
+        if item.isDone {
+            attributedString.addAttribute(.strikethroughStyle,
+                                          value: NSUnderlineStyle.single.rawValue,
+                                          range: NSMakeRange(0, attributedString.length))
+        }
+        
+        titleLabel.attributedText = attributedString
         dateLabel.text = formattedDate(item.createdAt)
         descriptionLabel.text = "\(item.taskDescription ?? "")"
     }

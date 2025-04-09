@@ -7,12 +7,17 @@
 
 import UIKit
 
+protocol TaskTableViewCellDelegate: AnyObject {
+    func didToggleCompletion(for cell: TaskTableViewCell)
+}
+
 final class TaskTableViewCell: UITableViewCell {
     
     private lazy var statusIconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFill
+        imageView.isUserInteractionEnabled = true
         imageView.clipsToBounds = true
         return imageView
     }()
@@ -40,9 +45,14 @@ final class TaskTableViewCell: UITableViewCell {
         return label
     }()
     
+    weak var delegate: TaskTableViewCellDelegate?
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupLayout()
+        
+        let tapGestureIconImageView = UITapGestureRecognizer(target: self, action: #selector(statusIconTapped))
+        statusIconImageView.addGestureRecognizer(tapGestureIconImageView)
     }
     
     override func prepareForReuse() {
@@ -55,15 +65,24 @@ final class TaskTableViewCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
+    @objc private func statusIconTapped() {
+        delegate?.didToggleCompletion(for: self)
+    }
+    
     func configureCell(with item: ToDoListItem) {
         dateLabel.text = dateFormat(item.createdAt)
         
         let description = item.taskDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
         descriptionLabel.text = (description?.isEmpty == false) ? description : ToDoListItem.generateRandomDescription()
         
-        let completed = item.isDone
-        statusIconImageView.image = UIImage(systemName: completed ? "checkmark.circle" : "circle")
-        statusIconImageView.tintColor = completed ? .systemYellow : .gray
+        let completed = item.isDone        
+        UIView.transition(with: statusIconImageView,
+                          duration: 0.4,
+                          options: .transitionCrossDissolve,
+                          animations: {
+            self.statusIconImageView.image = UIImage(systemName: completed ? "checkmark.circle" : "circle")
+            self.statusIconImageView.tintColor = completed ? .systemYellow : .gray
+        })
 
         let title = item.name ?? ""
         let attributedString = NSMutableAttributedString(string: title)

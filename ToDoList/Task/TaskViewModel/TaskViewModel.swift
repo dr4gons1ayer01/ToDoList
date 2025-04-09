@@ -58,6 +58,12 @@ final class TaskViewModel {
         onUpdate?()
     }
     
+    func toggleCompletion(for item: ToDoListItem) {
+        item.isDone.toggle()
+        dataManager.saveContext()
+        onUpdate?()
+    }
+    
     //CoreData
     func getAllItems() {
         items = dataManager.getAllItems()
