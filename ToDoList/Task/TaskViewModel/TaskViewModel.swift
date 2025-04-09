@@ -65,8 +65,8 @@ final class TaskViewModel {
         onUpdate?()
     }
     
-    func createItem(name: String) {
-        dataManager.createItem(name: name)
+    func createItem(name: String, description: String) {
+        dataManager.createItem(name: name, description: description)
         getAllItems()
     }
     
@@ -75,8 +75,8 @@ final class TaskViewModel {
         getAllItems()
     }
     
-    func updateItem(item: ToDoListItem, newName: String) {
-        dataManager.updateItem(item: item, newName: newName)
+    func updateItem(item: ToDoListItem, newName: String, newDescription: String) {
+        dataManager.updateItem(item: item, newName: newName, newDescription: newDescription)
         getAllItems()
     }
 }

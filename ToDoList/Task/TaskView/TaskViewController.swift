@@ -32,8 +32,36 @@ final class TaskViewController: UIViewController {
         configureSearch()
         configureBindings()
         
-        addNavigationItems()
         viewModel.fetchAndSaveFromAPI()
+    }
+    
+    @objc private func didTapAddButton() {
+        let alert = UIAlertController(title: "Новая задача",
+                                      message: nil,
+                                      preferredStyle: .alert)
+        
+        alert.addTextField { textField in
+            textField.placeholder = "Название задачи"
+        }
+        
+        alert.addTextField { textField in
+            textField.placeholder = "Описание"
+        }
+
+        let addAction = UIAlertAction(title: "Добавить", style: .default) { [weak self] _ in
+            guard let fields = alert.textFields,
+                  let name = fields[0].text, !name.isEmpty,
+                  let description = fields[1].text else { return }
+            
+            self?.viewModel.createItem(name: name, description: description)
+        }
+        
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        alert.addAction(addAction)
+        
+        alert.view.tintColor = .systemYellow
+        
+        present(alert, animated: true)
     }
     
     private func configureTableView() {
@@ -43,6 +71,7 @@ final class TaskViewController: UIViewController {
         
         contentView.tableView.delegate = self
         contentView.tableView.dataSource = self
+        contentView.addButton.addTarget(self, action: #selector(didTapAddButton), for: .touchUpInside)
     }
     
     private func configureSearch() {
@@ -59,27 +88,10 @@ final class TaskViewController: UIViewController {
         viewModel.onUpdate = { [weak self] in
             DispatchQueue.main.async {
                 self?.contentView.tableView.reloadData()
+                self?.contentView.taskCountLabel.text = "\(self?.viewModel.filteredItems.count ?? 0) Задач"
             }
         }
     }
-    
-    func addNavigationItems() {
-        let addAction = UIAction { _ in
-            let alert = UIAlertController(title: "Новая задача",
-                                          message: nil,
-                                          preferredStyle: .alert)
-            alert.addTextField()
-            alert.addAction(UIAlertAction(title: "Добавить", style: .cancel, handler: { [weak self] _ in
-                guard let field = alert.textFields?.first, let text = field.text, !text.isEmpty else {
-                    return
-                }
-                self?.viewModel.createItem(name: text)
-            }))
-            self.present(alert, animated: true)
-        }
-        navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .add, primaryAction: addAction)
-    }
-    
 }
 
 //MARK: UISearchResultsUpdating
@@ -114,35 +126,4 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
         let detailVC = DetailViewController(viewModel: detailVM)
         navigationController?.pushViewController(detailVC, animated: true)
     }
-
-    //TODO: переделать
-//    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-//        tableView.deselectRow(at: indexPath, animated: true)
-//        let item = viewModel.items[indexPath.row]
-//        
-//        let sheet = UIAlertController(title: "Редактировать или Удалить",
-//                                      message: nil,
-//                                      preferredStyle: .actionSheet)
-//        sheet.addAction(UIAlertAction(title: "Отмена", style: .cancel))
-//        sheet.addAction(UIAlertAction(title: "Редактировать", style: .default, handler: { [weak self] _ in
-//            let alert = UIAlertController(title: "Редактирование",
-//                                          message: nil,
-//                                          preferredStyle: .alert)
-//            alert.addTextField()
-//            alert.textFields?.first?.text = item.name
-//            alert.addAction(UIAlertAction(title: "Отмена", style: .destructive))
-//            alert.addAction(UIAlertAction(title: "Сохранить", style: .cancel, handler: { [weak self] _ in
-//                guard let field = alert.textFields?.first, let newName = field.text, !newName.isEmpty else {
-//                    return
-//                }
-//                self?.viewModel.updateItem(item: item, newName: newName)
-//            }))
-//            
-//            self?.present(alert, animated: true)
-//        }))
-//        sheet.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { [weak self] _ in
-//            self?.viewModel.deleteItem(item: item)
-//        }))
-//        present(sheet, animated: true)
-//    }
 }

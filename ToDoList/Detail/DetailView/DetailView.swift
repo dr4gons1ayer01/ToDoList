@@ -52,7 +52,7 @@ final class DetailView: UIView {
     func configure(with item: ToDoListItem) {
         titleLabel.text = item.name
         dateLabel.text = formattedDate(item.createdAt)
-        descriptionLabel.text = "\(item.name ?? "")"
+        descriptionLabel.text = "\(item.taskDescription ?? "")"
     }
     
     private func setupLayout() {

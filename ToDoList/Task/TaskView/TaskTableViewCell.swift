@@ -57,7 +57,9 @@ final class TaskTableViewCell: UITableViewCell {
     
     func configureCell(with item: ToDoListItem) {
         dateLabel.text = dateFormat(item.createdAt)
-        descriptionLabel.text = generateRandomDescription()
+        
+        let description = item.taskDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
+        descriptionLabel.text = (description?.isEmpty == false) ? description : ToDoListItem.generateRandomDescription()
         
         let completed = item.isDone
         statusIconImageView.image = UIImage(systemName: completed ? "checkmark.circle" : "circle")
@@ -80,17 +82,6 @@ final class TaskTableViewCell: UITableViewCell {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yy"
         return formatter.string(from: date)
-    }
-    
-    func generateRandomDescription() -> String {
-        let descriptions = [
-            "Не забыть проверить, что уже есть в холодильнике.",
-            "Составить список необходимых продуктов для ужина.",
-            "Сфокусироваться на выполнении важных задач.",
-            "Записать мысли и идеи в блокнот.",
-            "Найти время для отдыха и восстановления."
-        ]
-        return descriptions.randomElement() ?? ""
     }
     
     private func setupLayout() {

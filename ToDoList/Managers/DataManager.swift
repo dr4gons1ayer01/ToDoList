@@ -21,10 +21,11 @@ class DataManager {
         }
     }
     
-    func createItem(name: String) {
+    func createItem(name: String, description: String) {
         let newItem = ToDoListItem(context: context)
         newItem.id = Int64(Date().timeIntervalSince1970)
         newItem.name = name
+        newItem.taskDescription = description
         newItem.createdAt = Date()
         saveContext()
     }
@@ -34,8 +35,9 @@ class DataManager {
         saveContext()
     }
     
-    func updateItem(item: ToDoListItem, newName: String) {
+    func updateItem(item: ToDoListItem, newName: String, newDescription: String) {
         item.name = newName
+        item.taskDescription = newDescription
         saveContext()
     }
     
