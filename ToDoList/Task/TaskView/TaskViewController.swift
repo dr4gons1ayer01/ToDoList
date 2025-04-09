@@ -126,4 +126,53 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
         let detailVC = DetailViewController(viewModel: detailVM)
         navigationController?.pushViewController(detailVC, animated: true)
     }
+    
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        let item = viewModel.filteredItems[indexPath.row]
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            let edit = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
+                self?.presentEditAlert(for: item)
+            }
+            
+            let share = UIAction(title: "Поделиться", image: UIImage(systemName: "square.and.arrow.up")) { _ in
+                let activityVC = UIActivityViewController(activityItems: [item.name ?? ""], applicationActivities: nil)
+                self?.present(activityVC, animated: true)
+            }
+            
+            let delete = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                let confirmAlert = UIAlertController(title: "Удалить задачу?",
+                                                     message: "Вы уверены что хотите удалить?",
+                                                     preferredStyle: .alert)
+                confirmAlert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+                confirmAlert.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { _ in
+                    self?.viewModel.deleteItem(item: item)
+                }))
+                self?.present(confirmAlert, animated: true)
+            }
+            return UIMenu(title: "", children: [edit, share, delete])
+        }
+    }
+
+    private func presentEditAlert(for item: ToDoListItem) {
+        let alert = UIAlertController(title: "Редактирование", message: nil, preferredStyle: .alert)
+        alert.addTextField { $0.text = item.name }
+        alert.addTextField { $0.text = item.taskDescription }
+
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        
+        let saveAction = UIAlertAction(title: "Сохранить", style: .default) { [weak self] _ in
+            guard
+                let fields = alert.textFields,
+                let name = fields[0].text, !name.isEmpty,
+                let description = fields[1].text
+            else { return }
+            
+            self?.viewModel.updateItem(item: item, newName: name, newDescription: description)
+        }
+        
+        alert.addAction(saveAction)
+        alert.view.tintColor = .systemYellow
+        present(alert, animated: true)
+    }
 }
