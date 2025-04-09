@@ -7,7 +7,16 @@
 
 import UIKit
 
-class DataManager {
+protocol DataManaging {
+    func getAllItems() -> [ToDoListItem]
+    func createItem(name: String, description: String)
+    func createItem(from dto: TodoDTO)
+    func deleteItem(item: ToDoListItem)
+    func updateItem(item: ToDoListItem, newName: String, newDescription: String)
+    func saveContext()
+}
+
+class DataManager: DataManaging {
     
     static let shared = DataManager()
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -27,6 +36,11 @@ class DataManager {
         newItem.name = name
         newItem.taskDescription = description
         newItem.createdAt = Date()
+        saveContext()
+    }
+    
+    func createItem(from dto: TodoDTO) {
+        let item = ToDoListItem.from(dto: dto, context: context)
         saveContext()
     }
     

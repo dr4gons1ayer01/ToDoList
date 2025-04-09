@@ -13,8 +13,14 @@ final class TaskViewModel {
     private(set) var filteredItems = [ToDoListItem]()
     var onUpdate: (() -> Void)?
     
-    let dataManager = DataManager.shared
-    let networkManager: NetworkManager = NetworkManager(with: .default)
+    let dataManager: DataManaging
+    let networkManager: NetworkManager
+    
+    init(dataManager: DataManaging = DataManager.shared, 
+         networkManager: NetworkManager = NetworkManager(with: .default)) {
+        self.dataManager = dataManager
+        self.networkManager = networkManager
+    }
     
     //Network
     func fetchAndSaveFromAPI() {
@@ -33,12 +39,10 @@ final class TaskViewModel {
                     print("Получено задач: \(todos.count)")
                     todos.forEach { dto in
                         guard let self else { return }
-                        // защита от дублей
                         if !self.items.contains(where: { $0.id == dto.id }) {
-                            _ = ToDoListItem.from(dto: dto, context: self.dataManager.context)
+                            self.dataManager.createItem(from: dto)
                         }
                     }
-                    self?.dataManager.saveContext()
                     self?.getAllItems()
                 case .failure(let error):
                     print("Ошибка загрузки: \(error.localizedDescription)")
@@ -46,7 +50,7 @@ final class TaskViewModel {
             }
         }
     }
-    
+
     func filterItems(with text: String) {
         if text.isEmpty {
             filteredItems = items
@@ -62,6 +66,11 @@ final class TaskViewModel {
         item.isDone.toggle()
         dataManager.saveContext()
         onUpdate?()
+    }
+    ///for tests
+    func injectItems(_ newItems: [ToDoListItem]) {
+        self.items = newItems
+        self.filteredItems = newItems
     }
     
     //CoreData
